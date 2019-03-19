@@ -1,0 +1,31 @@
+database:
+  host: localhost
+  port: 3306
+  username: root
+  password:
+  name:
+  table_prefix:
+  charset: utf8
+  file: var/local.db
+
+mailer:
+  in_use: false
+  address:
+  password:
+  host:
+  encryption: tls # tls, ssl, none
+  port: 587
+
+site:
+  title:
+  use_db: false
+  key:
+  user_agent: 'Custom UserAgent'
+
+features:
+  google_analytics: false
+  piwik: false
+  cookie_consent: false
+
+session:
+  name: PROJECTSESSID
