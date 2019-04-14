@@ -7,7 +7,7 @@
             "email": "info@r-k.mx"
         }
     ],
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "require": {
         "php": ">=7.0.0",
         "kaiserwerk/k-router": "dev-master",
