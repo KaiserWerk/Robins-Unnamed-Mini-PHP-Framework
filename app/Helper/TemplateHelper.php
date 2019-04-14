@@ -5,6 +5,9 @@ class TemplateHelper
     public static function render($template, $vars = [], $headerTemplate = null, $footerTemplate = null)
     {
         global $config;
+        foreach ($config as $key => $value) {
+            $$key = $value;
+        }
         // $vars is always an array
         foreach ($vars as $key => $value) {
             $$key = $value;
@@ -21,19 +24,19 @@ class TemplateHelper
         $template = self::checkTemplateFilename($template);
         $footerTemplate = self::checkTemplateFilename($footerTemplate);
         
-        if (!file_exists(templateDir() . '/' . $headerTemplate)) {
+        if (!file_exists(TEMPLATEPATH . '/' . $headerTemplate)) {
             die('Header Template File ' . $headerTemplate . ' does not exist!');
         }
-        if (!file_exists(templateDir() . '/' . $template)) {
+        if (!file_exists(TEMPLATEPATH . '/' . $template)) {
             die('Template File ' . $template . ' does not exist!');
         }
-        if (!file_exists(templateDir() . '/' . $footerTemplate)) {
+        if (!file_exists(TEMPLATEPATH . '/' . $footerTemplate)) {
             die('Header Template File ' . $footerTemplate . ' does not exist!');
         }
         
-        require templateDir() . '/' . $headerTemplate;
-        require templateDir() . '/' . $template;
-        require templateDir() . '/' . $footerTemplate;
+        require TEMPLATEPATH . '/' . $headerTemplate;
+        require TEMPLATEPATH . '/' . $template;
+        require TEMPLATEPATH . '/' . $footerTemplate;
         die;
     }
     
@@ -56,19 +59,19 @@ class TemplateHelper
         $template = self::checkTemplateFilename($template);
         $footerTemplate = self::checkTemplateFilename($footerTemplate);
         
-        if (!file_exists(templateDir() . '/' . $headerTemplate)) {
+        if (!file_exists(TEMPLATEPATH . '/' . $headerTemplate)) {
             die('Header Template File ' . $headerTemplate . ' does not exist!');
         }
-        if (!file_exists(templateDir() . '/admin/' . $template)) {
+        if (!file_exists(TEMPLATEPATH . '/admin/' . $template)) {
             die('Template File ' . $template . ' does not exist!');
         }
-        if (!file_exists(templateDir() . '/' . $footerTemplate)) {
+        if (!file_exists(TEMPLATEPATH . '/' . $footerTemplate)) {
             die('Header Template File ' . $footerTemplate . ' does not exist!');
         }
         
-        require templateDir() . '/' . $headerTemplate;
-        require templateDir() . '/admin/' . $template;
-        require templateDir() . '/' . $footerTemplate;
+        require TEMPLATEPATH . '/' . $headerTemplate;
+        require TEMPLATEPATH . '/admin/' . $template;
+        require TEMPLATEPATH . '/' . $footerTemplate;
         die;
     }
     

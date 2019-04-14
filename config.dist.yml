@@ -22,6 +22,7 @@ site:
   use_db: false
   key:
   user_agent: 'Custom UserAgent'
+  default_locale: en
 
 features:
   google_analytics: false
