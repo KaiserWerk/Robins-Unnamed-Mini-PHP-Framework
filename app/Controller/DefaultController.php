@@ -8,7 +8,10 @@ class DefaultController extends Controller
      */
     public function homepageAction()
     {
-        echo 'Hello World!';
+        $message =  'Hello World!';
+        TemplateHelper::render('/index', [
+            'message' => $message,
+        ]);
     }
     
 }
