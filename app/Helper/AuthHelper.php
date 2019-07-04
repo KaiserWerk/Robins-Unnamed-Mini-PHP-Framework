@@ -2,11 +2,23 @@
 
 class AuthHelper
 {
+    /**
+     * Starts the session, independent from any authentication process
+     *
+     * @return null
+     */
     public static function init()
     {
         global $config;
         if (!self::isSessionStarted()) {
             session_start();
+        }
+        
+        #if (isset($_SESSION['activity']) && $_SESSION['activity'] + 600 < time()) {
+        #    Helper::redirect('/auth/lockscreen');
+        #}
+        if (!isset($_SESSION['activity'])) {
+            $_SESSION['activity'] = time();
         }
         
         // set the csrf token once
@@ -19,7 +31,7 @@ class AuthHelper
             if (self::isSessionStarted()) {
                 session_regenerate_id();
                 $_SESSION['sid'] = session_id();
-                $_COOKIE[$config['cookie']['sessid']] = session_id();
+                $_COOKIE[$config->session->name] = session_id();
                 $_SESSION['canary'] = time();
             }
         }
@@ -28,116 +40,64 @@ class AuthHelper
             if (self::isSessionStarted()) {
                 session_regenerate_id();
                 $_SESSION['sid'] = session_id();
-                $_COOKIE[$config['cookie']['sessid']] = session_id();
+                $_COOKIE[$config->session->name] = session_id();
                 $_SESSION['canary'] = time();
             }
         }
+        
         return null;
     }
     
-    public static function requireLogin()
-    {
-        if (!self::isLoggedIn()) {
-            Helper::setMessage('You must be logged in.', 'error');
-            Helper::redirect('/auth/login');
-        }
-    }
-    
-    public static function requireAdmin()
-    {
-        if (!self::isAdmin()) {
-            Helper::setMessage('You are not authorized to do that.', 'error');
-            Helper::redirect('/');
-        }
-    }
-    
-    public static function isAdmin($user_id = null)
-    {
-        if ($user_id != null) {
-            $id = $user_id;
-        } else {
-            $id = (self::isLoggedIn()) ? $_SESSION['userid'] : null;
-        }
-        
-        if ($id != null) {
-            $db = new DBHelper();
-            $row = $db->get('user', [
-                'admin'
-            ], [
-                'id' => $id,
-            ]);
-            
-            return (bool)$row['admin'];
-        }
-        
-        return false;
-    }
-    
+    /**
+     * Checks whether the session is already started
+     * session_status() is buggy, don't use it
+     *
+     * @return bool
+     */
     private static function isSessionStarted()
     {
+        #if (version_compare(phpversion(), '5.4.0', '>=')) {
+        #    return (session_status() === PHP_SESSION_ACTIVE) ? true : false;
+        #} else {
         return session_id() === '' ? false : true;
+        #}
     }
     
-    public static function isLoggedIn()
+    /**
+     * Returns true if the current user is logged in
+     *
+     * @return bool
+     */
+    public static function isLoggedIn($debug = false)
     {
         global $config;
-        if (!self::isSessionStarted()) {
-            session_start();
+        
+        if ($debug === true) {
+            echo 'session[user]:'; echo isset($_SESSION['user']) ? 'yes' : 'no';
+            echo '<br>session[sid]:'; echo isset($_SESSION['sid']) ? 'yes' : 'no';
+            echo '<br>cookie(session):'; echo isset($_COOKIE[$config->session->name]) ? 'yes' : 'no';
+            echo '<br>cookie(session) == session[sid]:'; echo ($_COOKIE[$config->session->name] == $_SESSION['sid']) ? 'yes' : 'no';
+            die;
         }
-        if (isset($_SESSION['userid']) && isset($_SESSION['sid'])) {
-            if (isset($_COOKIE[$config['cookie']['sessid']]) && $_COOKIE[$config['cookie']['sessid']] == $_SESSION['sid']) {
-                return true;
-            }
-            return false;
+        
+        if (isset($_SESSION['user']) && isset($_SESSION['sid'])) {
+            return isset($_COOKIE[$config->session->name]) && $_COOKIE[$config->session->name] == $_SESSION['sid'];
         }
         return false;
     }
     
-    public static function hashPassword($string)
-    {
-        return password_hash($string, PASSWORD_BCRYPT, ['cost' => 12]);
-    }
-    
-    public static function generateToken($length = 60)
-    {
-        $chars = '01234567890123456789abcdefghijklmnopqrstuvwxyz';
-        $token = '';
-        for ($i = 0; $i < $length; ++ $i) {
-            $len   = strlen($chars); // length of string
-            $len   = $len - 1; // -1 because first array element is 0, not 1
-            $int   = rand(0, $len); // generate random integer between 0 and string length -1
-            $char  = $chars[$int]; // use random integer as array index to get a random character from string
-            $token .= $char; // append it to the result string
-        }
-        return $token;
-    }
-    
-    public static function getUserLocale()
+    /**
+     * Logs out the currently loggd in user
+     *
+     * @return bool
+     */
+    public static function logout()
     {
         global $config;
-        if (self::isLoggedIn()) {
-            $db  = new DBHelper();
-            $row = $db->get('user', [
-                'locale'
-            ], [
-                'id' => $_SESSION['userid']
-            ]);
-            // if the user exists
-            if ($row != null) {
-                return $row['locale']; // contains the user's locale
-            }
-        }
-        
-        if (isset($_COOKIE[$config['cookie']['language']])) {
-            return $_COOKIE[$config['cookie']['language']];
-        }
-        
-        $lang = substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
-        $languages = ['de', 'en', 'fr', 'es'];
-        if (in_array($lang, $languages)) {
-            return $lang;
-        }
-        
-        return $config['site']['default_locale'];
+        @setcookie($config->session->name, '', time() - 10);
+        @setcookie($config->cookie->login_attempt, '', time() - 10);
+        @session_unset();
+        @session_destroy();
+        return true;
     }
 }

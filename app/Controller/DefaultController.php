@@ -8,10 +8,11 @@ class DefaultController extends Controller
      */
     public function homepageAction()
     {
-        $message =  'Hello World!';
+        AuthHelper::init();
+        
         TemplateHelper::render('/index', [
-            'message' => $message,
-        ]);
+            'message' => 'Hello World'
+        ], null, null);
     }
     
 }

@@ -1,0 +1,211 @@
+<?php
+
+require __DIR__ . '/../bootstrap.php';
+require __DIR__ . '/../app/Helper/DBHelper.php';
+
+use SSilence\ImapClient\ImapClientException;
+use SSilence\ImapClient\ImapConnect;
+use SSilence\ImapClient\ImapClient as Imap;
+
+$climate = new \League\CLImate\CLImate();
+$db = new DBHelper();
+
+// Always show errors
+ini_set('display_errors', 'On');
+
+if (php_sapi_name() !== 'cli') {
+    die;
+}
+
+try {
+    $climate->arguments->add([
+        'help' => [
+            'longPrefix' => 'help',
+            'description' => 'Show possible arguments',
+        ],
+        'dump-schema' => [
+            'longPrefix' => 'dump-schema',
+            'description' => 'Dumps the current database schema into a file',
+        ],
+        'import-schema' => [
+            'longPrefix' => 'import-schema',
+            'description' => 'Imports the current SQL schema dump',
+        ],
+        'enable-debugging' => [
+            'longPrefix' => 'enable-debugging',
+            'description' => 'Enables the display of errors',
+        ],
+        'disable-debugging' => [
+            'longPrefix' => 'disable-debugging',
+            'description' => 'Disables the display of errors',
+        ],
+        'no-interaction' => [
+            'longPrefix' => 'no-interaction',
+            'description' => 'Uses the non-interactive mode',
+        ],
+        'clear-sessions' => [
+            'longPrefix' => 'clear-sessions',
+            'description' => 'Removes all active sessions (which logs out all users)',
+        ],
+        'create-user' => [
+            'longPrefix' => 'create-user',
+            'description' => 'Create a user',
+        ],
+        'remove-user' => [
+            'longPrefix' => 'remove-user',
+            'description' => 'Remove a user',
+        ],
+        'username' => [
+            'longPrefix' => 'username',
+            'description' => 'Supplies the username',
+        ],
+        'password' => [
+            'longPrefix' => 'password',
+            'description' => 'Supplies the password',
+        ],
+        'email' => [
+            'longPrefix' => 'email',
+            'description' => 'Supplies the email',
+        ],
+        'admin' => [
+            'longPrefix' => 'admin',
+            'description' => 'Determines whether new user has admin privileges',
+        ],
+    ]);
+    $climate->arguments->parse();
+} catch (\Exception $e) {
+    echo 'Could not add or parse arguments: ' . $e->getMessage();
+}
+
+/**
+ * Show commands / usage
+ */
+if ($climate->arguments->defined('help')) {
+    $climate->usage();
+}
+
+if ($climate->arguments->defined('parse-ticket-mailbox')) {
+    $climate->out('hey');
+}
+
+if ($climate->arguments->defined('dump-schema')) {
+
+}
+
+if ($climate->arguments->defined('enable-debugging')) {
+    if (file_put_contents(TEMPPATH . '/lock/debug.lock', '1')) {
+        $climate->lightGreen()->out('Debug mode enabled (lock file created).');
+    } else {
+        $climate->red()->out('Could not create lock file!');
+    }
+}
+if ($climate->arguments->defined('disable-debugging')) {
+    if (unlink(TEMPPATH . '/lock/debug.lock')) {
+        $climate->lightGreen()->out('Debug mode disabled (lock file removed).');
+    } else {
+        $climate->red()->out('Could not remove lock file!');
+    }
+}
+
+
+/**
+ * Clear session folder
+ */
+if ($climate->arguments->defined('clear-sessions')) {
+    $files = glob(SESSIONPATH . '/sess_*');
+    foreach($files as $file) {
+        if(is_file($file)) {
+            unlink( $file );
+        }
+    }
+}
+
+/**
+ * Create a user
+ *
+ * If the supplied username is already in use, this does nothing
+ */
+if ($climate->arguments->defined('create-user')) {
+    if ($climate->arguments->defined('no-interaction')) {
+        $username = $climate->arguments->get('username');
+        $password = $climate->arguments->get('password');
+        $email = $climate->arguments->get('email');
+        if (!empty($username) && !empty($password) && !empty($email)) {
+            $fields = [
+                'username' => $username,
+                'password' => password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]),
+                'email' => $email,
+            ];
+            if ($climate->arguments->defined('admin')) {
+                $fields['admin'] = 1;
+            }
+            $db->insert('user', $fields);
+            $climate->lightGreen()->out('Created user ' . $username . '.' );
+        } else {
+            $climate->red()->out('Could not create user!');
+        }
+        
+    } else {
+        $usernameInput = $climate->input('Username?');
+        $username = $usernameInput->prompt();
+        $passwordInput = $climate->password('Password?');
+        $password = $passwordInput->prompt();
+        $emailInput = $climate->input('Email?');
+        $email = $emailInput->prompt();
+        $adminInput = $climate->confirm('Admin?');
+        $admin = $adminInput->confirmed();
+        $lockedInput = $climate->confirm('Locked?');
+        $locked = $lockedInput->confirmed();
+        
+        if (!empty($username) && !empty($password) && !empty($email)) {
+            $fields = [
+                'username' => $username,
+                'password' => password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]),
+                'email' => $email,
+                'admin' => (int)$admin,
+                'locked' => (int)$locked,
+            ];
+            
+            $db->insert('user', $fields);
+            $climate->lightGreen()->out( 'Created user ' . $username . '.' );
+        } else {
+            $climate->red()->out('Could not create user!');
+        }
+    }
+}
+
+/**
+ * Removes a user
+ *
+ * If the supplied username does not exist, this does nothing
+ */
+if ($climate->arguments->defined('remove-user')) {
+    if ($climate->arguments->defined('no-interaction')) {
+        $username = $climate->arguments->get('username');
+        if (!empty($username)) {
+            $db->delete('user', [
+                'username' => $username,
+            ]);
+            $climate->lightGreen()->out('Removing user ' . $username);
+        } else {
+            $climate->red()->out('Could not remove user!');
+        }
+        
+    } else {
+        $usernameInput = $climate->input('Username?');
+        $username = $usernameInput->prompt();
+        if (!empty($username)) {
+            $confirm = $climate->confirm( 'Do you confirm?' );
+            if ( $confirm->confirmed() ) {
+                $db->delete('user', [
+                    'username' => $username,
+                ]);
+                $climate->lightGreen()->out( 'Removing user ' . $username );
+            } else {
+                $climate->info( 'Cancelled.' );
+            }
+        } else {
+            $climate->red()->out('Could not remove user!');
+        }
+    }
+}
