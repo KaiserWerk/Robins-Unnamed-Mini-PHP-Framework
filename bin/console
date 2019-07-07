@@ -84,23 +84,23 @@ if ($climate->arguments->defined('help')) {
     $climate->usage();
 }
 
-if ($climate->arguments->defined('parse-ticket-mailbox')) {
-    $climate->out('hey');
-}
-
 if ($climate->arguments->defined('dump-schema')) {
 
 }
 
+if ($climate->arguments->defined('import-schema')) {
+
+}
+
 if ($climate->arguments->defined('enable-debugging')) {
-    if (file_put_contents(TEMPPATH . '/lock/debug.lock', '1')) {
+    if (@file_put_contents(TEMPPATH . '/lock/debug.lock', '1')) {
         $climate->lightGreen()->out('Debug mode enabled (lock file created).');
     } else {
         $climate->red()->out('Could not create lock file!');
     }
 }
 if ($climate->arguments->defined('disable-debugging')) {
-    if (unlink(TEMPPATH . '/lock/debug.lock')) {
+    if (@unlink(TEMPPATH . '/lock/debug.lock')) {
         $climate->lightGreen()->out('Debug mode disabled (lock file removed).');
     } else {
         $climate->red()->out('Could not remove lock file!');
