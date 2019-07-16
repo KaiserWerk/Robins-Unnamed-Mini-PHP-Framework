@@ -9,6 +9,9 @@ require __DIR__ . '/app/constants.php';
 $config = [];
 try {
     $yaml_file = __DIR__ . '/config.yml';
+    if (!file_exists($yaml_file)) {
+        die("Missing config file! Copy config.dist.yml to config.yml to get started!");
+    }
     $yaml_content = file_get_contents($yaml_file);
     
     // replace placeholders in config file with actual values
