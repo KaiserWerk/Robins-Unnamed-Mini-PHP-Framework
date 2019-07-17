@@ -1,6 +1,10 @@
 <?php
 
-require __DIR__ . '/vendor/autoload.php';
+$autoload_file = __DIR__ . '/vendor/autoload.php';
+if (!file_exists($autoload_file)) {
+    die("autoload.php missing! Execute composer install first!");
+}
+require $autoload_file
 require __DIR__ . '/app/constants.php';
 
 /**
