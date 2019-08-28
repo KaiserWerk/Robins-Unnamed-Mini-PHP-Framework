@@ -13,7 +13,8 @@
         "kaiserwerk/k-router": "dev-master",
         "catfan/medoo": "^1.6",
         "phpmailer/phpmailer": "^6.0",
-        "symfony/yaml": "^4.2"
+        "symfony/yaml": "^4.2",
+        "league/climate": "^3.5"
     },
     "scripts": {
         "post-install-cmd": [
