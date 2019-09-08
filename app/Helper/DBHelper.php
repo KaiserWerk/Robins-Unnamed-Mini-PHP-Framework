@@ -10,7 +10,7 @@ class DBHelper extends \Medoo\Medoo
                 'database_type' => $config->database->driver,
                 'server'        => $config->database->host,
                 'database_name' => $config->database->name,
-                'username'      => $config->database->user,
+                'username'      => $config->database->username,
                 'password'      => $config->database->password,
                 'prefix'        => $config->database->table_prefix,
                 'port'          => $config->database->port,
