@@ -20,15 +20,18 @@ mailer:
 
 site:
   title:
-  use_db: false
-  key:
+  key:  # basically an api key for your project
   user_agent: 'Custom UserAgent'
   default_locale: en
 
 features:
   google_analytics: false
-  piwik: false
+  matomo: false
   cookie_consent: false
 
 session:
   name: PROJECTSESSID
+  
+cookie:
+  login_attempt: LA
+  language: LANG
