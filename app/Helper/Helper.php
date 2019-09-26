@@ -318,6 +318,19 @@ class Helper
      */
     public static function redirect($url)
     {
+        global $router;
+        $routes = $router->getRoutes();
+        foreach ($routes as $route) {
+            if ($route['name'] === $url) {
+                $url = $route['url'];
+                if (!empty($params)) {
+                    foreach ($params as $key => $value) {
+                        $url = str_replace('[:'.$key.']', $value, $url);
+                    }
+                }
+            }
+        }
+        
         header('Location: ' . $url);
         die;
     }
